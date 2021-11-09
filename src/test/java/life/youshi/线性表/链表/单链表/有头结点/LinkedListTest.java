@@ -1,4 +1,4 @@
-package life.youshi.线性表.链表.单链表.无头结点;
+package life.youshi.线性表.链表.单链表.有头结点;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -56,15 +56,17 @@ public class LinkedListTest {
 
     @Test
     public void get1() {
+        assertEquals(list.getHead(), list.get(-1));
         assertEquals(node1, list.get(0));
         assertEquals(node2, list.get(1));
         assertEquals(node3, list.get(2));
-        assertThrows(RuntimeException.class, () -> list.get(-1));
+        assertThrows(RuntimeException.class, () -> list.get(-2));
         assertThrows(RuntimeException.class, () -> list.get(3));
     }
 
     @Test
     public void get2() {
+        assertEquals(list.getHead(), list.get(null));
         assertEquals(node1, list.get("C"));
         assertEquals(node2, list.get("Java"));
         assertEquals(node3, list.get("Python"));
@@ -72,11 +74,13 @@ public class LinkedListTest {
     }
 
     @Test
-    public void getFirst() {
-        assertEquals(node1, list.getFirst());
+    public void getHead() {
+        assertNotNull(list.getHead());
+        assertEquals(node1, list.next(list.getHead()));
 
         list.clear();
-        assertNull(list.getFirst());
+        assertNotNull(list.getHead());
+        assertNull(list.next(list.getHead()));
     }
 
     @Test
@@ -84,12 +88,13 @@ public class LinkedListTest {
         assertEquals(node3, list.getLast());
 
         list.clear();
-        assertNull(list.getLast());
+        assertEquals(list.getHead(), list.getLast());
     }
 
     @Test
     public void previous() {
-        assertNull(list.previous(node1));
+        assertNull(list.previous(list.getHead()));
+        assertEquals(list.getHead(), list.previous(node1));
         assertEquals(node1, list.previous(node2));
         assertEquals(node2, list.previous(node3));
 
@@ -99,6 +104,7 @@ public class LinkedListTest {
 
     @Test
     public void next() {
+        assertEquals(node1, list.next(list.getHead()));
         assertEquals(node2, list.next(node1));
         assertEquals(node3, list.next(node2));
         assertNull(list.next(node3));
@@ -111,9 +117,10 @@ public class LinkedListTest {
     public void insert1() {
         // 插入到表头
         LinkedList<String>.Node node = list.createNode("Go");
-        list.insert(null, node);
+        assertThrows(RuntimeException.class, () -> list.insert(null, node));
+        list.insert(list.getHead(), node);
         assertEquals(4, list.length());
-        assertEquals(node, list.getFirst());
+        assertEquals(node, list.next(list.getHead()));
         assertEquals(node1, list.next(node));
     }
 
@@ -123,7 +130,7 @@ public class LinkedListTest {
         LinkedList<String>.Node node = list.createNode("Go");
         list.insert(node1, node);
         assertEquals(4, list.length());
-        assertEquals(node1, list.getFirst());
+        assertEquals(node1, list.next(list.getHead()));
         assertEquals(node, list.next(node1));
         assertEquals(node2, list.next(node));
     }
@@ -142,12 +149,13 @@ public class LinkedListTest {
     @Test
     public void delete1() {
         // 删除表头
-        assertEquals(node1, list.delete(null));
+        assertThrows(RuntimeException.class, () -> list.delete(null));
+        assertEquals(node1, list.delete(list.getHead()));
         assertEquals(2, list.length());
-        assertEquals(node2, list.getFirst());
+        assertEquals(node2, list.next(list.getHead()));
 
         list.clear();
-        assertNull(list.delete(list.getFirst()));
+        assertNull(list.delete(list.getHead()));
     }
 
     @Test
@@ -155,7 +163,7 @@ public class LinkedListTest {
         // 删除表中
         assertEquals(node2, list.delete(node1));
         assertEquals(2, list.length());
-        assertEquals(node1, list.getFirst());
+        assertEquals(node1, list.next(list.getHead()));
         assertEquals(node3, list.next(node1));
     }
 
