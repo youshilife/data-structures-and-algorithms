@@ -1,4 +1,4 @@
-package life.youshi.线性表.顺序表.固定容量;
+package life.youshi.线性表.顺序表.自动扩容;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -31,14 +31,6 @@ public class ArrayListTest {
     }
 
     @Test
-    public void isFull() {
-        assertFalse(list.isFull());
-        list.insert(list.length(), "Go");
-        list.insert(list.length(), "Rust");
-        assertTrue(list.isFull());
-    }
-
-    @Test
     public void length() {
         assertEquals(3, list.length());
         list.clear();
@@ -48,7 +40,7 @@ public class ArrayListTest {
     @Test
     public void capacity() {
         list = new ArrayList<>();
-        assertEquals(ArrayList.DEFAULT_CAPACITY, list.capacity());
+        assertEquals(ArrayList.DEFAULT_INITIAL_CAPACITY, list.capacity());
         list = new ArrayList<>(5);
         assertEquals(5, list.capacity());
         list = new ArrayList<>(0);
@@ -123,10 +115,17 @@ public class ArrayListTest {
 
     @Test
     public void insert5() {
-        // 容量已满
+        // 扩容
         list.insert(list.length(), "Go");
         list.insert(list.length(), "Rust");
-        assertThrows(RuntimeException.class, () -> list.insert(list.length(), "JavaScript"));
+        assertEquals(5, list.length());
+        assertEquals(5, list.capacity());
+        list.insert(list.length(), "JavaScript");
+        assertEquals(6, list.length());
+        assertEquals(5 + ArrayList.CAPACITY_INCREMENT, list.capacity());
+        assertEquals("C", list.get(0));
+        assertEquals("Rust", list.get(4));
+        assertEquals("JavaScript", list.get(5));
     }
 
     @Test
