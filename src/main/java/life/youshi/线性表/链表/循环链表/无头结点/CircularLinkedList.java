@@ -1,16 +1,16 @@
-package life.youshi.线性表.链表.单链表.无头结点;
+package life.youshi.线性表.链表.循环链表.无头结点;
 
 import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * 单链表
+ * 循环链表
  *
- * <p>不带头结点，第一个元素结点的直接前驱为{@code null}。</p>
+ * <p>不带头结点。第一个元素结点的直接前驱为最后一个元素结点，最后一个元素结点的直接后继为第一个元素结点。</p>
  *
  * @param <E> 数据元素类型
  */
-public class LinkedList<E> {
+public class CircularLinkedList<E> {
     /**
      * 链表结点
      */
@@ -54,14 +54,16 @@ public class LinkedList<E> {
     }
 
     /**
-     * 头指针
+     * 尾指针
      *
-     * <p>指向第一个元素结点。在空表中为{@code null}。</p>
+     * <p>指向最后一个元素结点，通过{@code tail.next}可获取第一个元素结点。</p>
+     *
+     * <p>在空表中为{@code null}。</p>
      */
-    private Node head;
+    private Node tail;
 
-    public LinkedList() {
-        head = null;
+    public CircularLinkedList() {
+        tail = null;
     }
 
     /**
@@ -69,13 +71,16 @@ public class LinkedList<E> {
      */
     public void clear() {
         // 将所有结点之间的链接断开
-        Node p = head;
-        while (p != null) {
-            Node temp = p.next;
-            p.next = null;
-            p = temp;
+        if (tail != null) {
+            Node p = tail.next;
+            tail.next = null;
+            while (p != null) {
+                Node temp = p.next;
+                p.next = null;
+                p = temp;
+            }
+            tail = null;
         }
-        head = null;
     }
 
     /**
@@ -84,7 +89,7 @@ public class LinkedList<E> {
      * @return 是/否
      */
     public boolean isEmpty() {
-        return head == null;
+        return tail == null;
     }
 
     /**
@@ -94,10 +99,13 @@ public class LinkedList<E> {
      */
     public int length() {
         int length = 0;
-        Node p = head;
-        while (p != null) {
-            length++;
-            p = p.next;
+        if (tail != null) {
+            length = 1;
+            Node p = tail.next;
+            while (p != tail) {
+                length++;
+                p = p.next;
+            }
         }
         return length;
     }
@@ -120,13 +128,20 @@ public class LinkedList<E> {
      * @throws RuntimeException 如果下标不合法
      */
     public Node get(int index) {
-        if (index < 0) {
+        // 空表中无合法下标
+        if (index < 0 || tail == null) {
             throw new RuntimeException("下标不合法！");
         }
 
-        Node p = head;
+        // 令p初始指向第一个结点
+        Node p = tail.next;
         int i = 0;
-        while (p != null && i < index) {
+        while (i < index) {
+            // 若p已到达最后一个结点，则未找到
+            if (p == tail) {
+                p = null;
+                break;
+            }
             p = p.next;
             i++;
         }
@@ -145,10 +160,20 @@ public class LinkedList<E> {
      * @return 结点（表中无该元素值时返回{@code null}；表中有多个该元素值时返回第一个结点）
      */
     public Node get(E value) {
-        Node p = head;
-        while (p != null && !Objects.equals(p.data, value)) {
-            p = p.next;
+        Node p = null;
+        if (tail != null) {
+            // 令p初始指向第一个结点
+            p = tail.next;
+            while (!Objects.equals(p.data, value)) {
+                // 若p已到达最后一个结点，则未找到
+                if (p == tail) {
+                    p = null;
+                    break;
+                }
+                p = p.next;
+            }
         }
+
         return p;
     }
 
@@ -158,7 +183,7 @@ public class LinkedList<E> {
      * @return 结点
      */
     public Node getFirst() {
-        return head;
+        return tail != null ? tail.next : null;
     }
 
     /**
@@ -167,34 +192,19 @@ public class LinkedList<E> {
      * @return 结点
      */
     public Node getLast() {
-        Node p = head;
-        while (p != null && p.next != null) {
-            p = p.next;
-        }
-        return p;
+        return tail;
     }
 
     /**
      * 获取指定结点的前驱结点。
      *
      * @param current 当前结点
-     * @return 前驱结点（第一个元素结点的前驱结点为{@code null}）
-     * @throws RuntimeException 如果current不在当前链表中
+     * @return 前驱结点（第一个元素结点的前驱结点为最后一个元素结点）
      */
     public Node previous(Node current) {
-        // 若是第一个结点，则前驱为null
-        if (current == head) {
-            return null;
-        }
-
-        Node p = head;
-        while (p != null && p.next != current) {
+        Node p = current;
+        while (p.next != current) {
             p = p.next;
-        }
-
-        // 若出循环时p为null，则表示current不在此链表中
-        if (p == null) {
-            throw new RuntimeException("该结点不在此链表中！");
         }
 
         return p;
@@ -204,7 +214,7 @@ public class LinkedList<E> {
      * 获取指定结点的后继结点。
      *
      * @param current 当前结点
-     * @return 后继结点（最后一个元素结点的后继结点为{@code null}）
+     * @return 后继结点（最后一个元素结点的后继结点为第一个元素结点）
      */
     public Node next(Node current) {
         return current.next;
@@ -213,61 +223,80 @@ public class LinkedList<E> {
     /**
      * 在指定前驱结点之后插入结点。
      *
-     * @param previous 前驱结点（{@code null}表示要在表头插入）
+     * @param previous 前驱结点（{@code null}表示要插入到表头）
      * @param node 要插入的结点
      */
     public void insert(Node previous, Node node) {
         // 插入到表头
         if (previous == null) {
-            node.next = head;
-            head = node;
+            // 空表
+            if (tail == null) {
+                tail = node;
+                tail.next = tail;
+            }
+            // 非空表
+            else {
+                node.next = tail.next;
+                tail.next = node;
+            }
         } else {
             node.next = previous.next;
             previous.next = node;
+            if (previous == tail) {
+                tail = node;
+            }
         }
     }
 
     /**
      * 删除指定前驱结点之后的结点。
      *
-     * @param previous 前驱结点（{@code null}表示要删除第一个结点）
+     * @param previous 前驱结点（不能为{@code null}）
      * @return 被删除的结点（未删除任何结点时返回{@code null}）
+     * @throws RuntimeException 如果前驱结点为空
      */
     public Node delete(Node previous) {
-        Node node;
-        // 删除表头
         if (previous == null) {
-            node = head;
-            if (head != null) {
-                head = head.next;
-            }
+            throw new RuntimeException("前驱结点不能为null！");
+        }
+
+        Node node = previous.next;
+        // 如果只有一个结点
+        if (node.next == node) {
+            tail = null;
         } else {
-            node = previous.next;
-            if (previous.next != null) {
-                previous.next = previous.next.next;
+            previous.next = previous.next.next;
+            if (node == tail) {
+                tail = previous;
             }
         }
 
         // 断开该结点与链表的链接关系
-        if (node != null) {
-            node.next = null;
-        }
+        node.next = null;
 
         return node;
     }
 
     /**
-     * 从头到尾遍历每一个元素。
+     * 从指定结点开始循环遍历每一个元素。
      *
+     * @param current 当前结点（起始结点，为{@code null}表示从头遍历）
      * @param function 遍历过程中处理每一个元素的函数。
      *                 函数接收1个参数：
      *                 1. 当前结点
      */
-    public void traverse(Consumer<Node> function) {
-        Node p = head;
-        while (p != null) {
-            function.accept(p);
-            p = p.next;
+    public void traverse(Node current, Consumer<Node> function) {
+        if (tail != null) {
+            Node begin = current != null ? current : tail.next;
+            Node p = begin;
+            while (true) {
+                function.accept(p);
+                p = p.next;
+                // 如果又回到了起始点，则终止
+                if (p == begin) {
+                    break;
+                }
+            }
         }
     }
 }
